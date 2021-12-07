@@ -4,6 +4,7 @@ const app = express();
 const PORT = 8080; // default port 8080
 const users = {};
 const user = {};
+const validateShortURLForUser = {};
 function generateRandomString() {
     var result           = '';
     var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -98,6 +99,16 @@ app.post("/urls", (req, res) => {
     }
     res.render("urls_show", templateVars);
 });
+
+/**
+ * This method handles delete button. It valdaites if url belongs to user or not. Based on that, it deletes that shortURL, if not send HTML to user saying, 'not authorised' to delete that URL.
+ */
+ app.post("/urls/:shortURL/delete", (req, res) => {
+    const {shortURL} = req.params;
+    delete urlDatabase[shortURL];
+      res.redirect('/urls'); 
+});
+
 
 
 
