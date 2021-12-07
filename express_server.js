@@ -28,7 +28,7 @@ const urlDatabase = {
 app.get("/urls.json", (req, res) => {
     res.json(urlDatabase);
   });
-
+// To URL page
   app.get("/urls", (req, res) => {
     const templateVars = { urls: urlDatabase };
     res.render("urls_index", templateVars);
@@ -52,13 +52,41 @@ app.post("/urls/:id", (req, res) => {
     urlDatabase[id] = {"longURL" : longURL , "userID" : userID["id"] };
     res.redirect('/urls');
   });
-  /*
-  This methods handles 'Create New URL' button. When user clicks on it, based on user validation in session, it shows 'urls_new' page else redictes to login page.
-  */
+  
+  //GET route to render the New URL
 
   app.get("/urls/new", (req, res) => {
     const templateVars = { "user" : user};
     res.render("urls_new",templateVars);
+  });
+
+  // Show User their Newly Created Link
+app.get("/urls/:shortURL", (req, res) => {
+    const shortURL = req.params.shortURL;
+    const templateVars = {
+      shortURL: req.params.shortURL,
+      longURL: urlDatabase[shortURL].longURL
+    };
+    
+      res.render("urls_show", templateVars);
+  });
+
+  app.get("/u/:shortURL", (req, res) => {
+     const shortURL = req.params.shortURL;
+     const longURL = urlDatabase[shortURL];
+     console.log(longURL);
+    res.redirect(longURL);
+  });
+
+  // Request POST /urls when form is submitted generating random string(shortURL)
+//shortURL-longURL key-value pair are saved to the urlDatabase.
+app.post("/urls", (req, res) => {
+    const newUrl = generateRandomString();
+    const longURL = req.body.longURL;
+    urlDatabase[newUrl] = {
+      longURL: longURL
+    };
+    res.redirect("/urls");
   });
        
 
