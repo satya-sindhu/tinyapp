@@ -1,8 +1,20 @@
 const express = require("express");
+const bodyParser = require("body-parser");
 const app = express();
 const PORT = 8080; // default port 8080
 const users = {};
-
+const user = {};
+function generateRandomString() {
+    var result           = '';
+    var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    var charactersLength = characters.length;
+    for ( var i = 0; i < 6; i++ ) {
+      result += characters.charAt(Math.floor(Math.random() * 
+ charactersLength));
+   }
+   return result;
+};
+app.use(bodyParser.urlencoded({extended: true}));
 app.set("view engine", "ejs");
 
 const urlDatabase = {
@@ -22,6 +34,34 @@ app.get("/urls.json", (req, res) => {
     res.render("urls_index", templateVars);
   });
 
+// Request POST /urls when form is submitted generating random string(shortURL)
+  app.post("/urls", (req, res) => {
+    const newUrl = generateRandomString();
+    const longURL = req.body.longURL;
+    urlDatabase[newUrl] = longURL;
+    res.redirect("/urls");
+   console.log(req.body);
+  });
+
+  /*
+  When user edits existing url and submit, then this methods takes modifies URL and saves to urlsDB and redicts to /urls link to show all urls with edit one.
+*/
+app.post("/urls/:id", (req, res) => {
+    const {id} = req.params;
+    const {longURL} = req.body;
+    urlDatabase[id] = {"longURL" : longURL , "userID" : userID["id"] };
+    res.redirect('/urls');
+  });
+  /*
+  This methods handles 'Create New URL' button. When user clicks on it, based on user validation in session, it shows 'urls_new' page else redictes to login page.
+  */
+
+  app.get("/urls/new", (req, res) => {
+    const templateVars = { "user" : user};
+    res.render("urls_new",templateVars);
+  });
+       
+
   app.get("/urls/:shortURL", (req, res) => {
     const shortURL = req.params.shortURL;
     const templateVars = {
@@ -30,7 +70,8 @@ app.get("/urls.json", (req, res) => {
     }
     res.render("urls_show", templateVars);
 });
-      
+
+
 
   app.get("/hello", (req, res) => {
     res.send("<html><body>Hello <b>World</b></body></html>\n");
