@@ -14,9 +14,9 @@
         <li class="nav-item">
           <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </ul>
-      <%if (username !== undefined) { %>
+      <%if (locals.username !== undefined) { %>
         <form class="form-inline my-2 my-lg-0" action="/logout" method="POST">
-          <label style="margin-right: 1em;">Logged In As:  <%= username %></label>
+          <label style="margin-right: 1em;">Logged In As: TinyApp <%= user.email %></label>
           <input type="submit" name="logout" class="btn btn-outline-dark" value="Logout">
         </form>
         <% }  else { %>
@@ -24,6 +24,10 @@
         <input class="form-control mr-sm-2" type="text" name="username" placeholder="Username">
         <input type="submit" name="login" class="btn btn-outline-dark" value="Login">
       </form>
+      <div class="navbar-nav">
+        <a class="navbar-nav nav-item nav-link " href="/login">Login</a>
+        <a class="navbar-nav nav-item nav-link" href="/register">Register</a>
+      </div>
       <% } %>
       </div>
     </nav>
