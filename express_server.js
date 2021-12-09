@@ -48,12 +48,12 @@ app.get("/urls.json", (req, res) => {
 
 // To URL page
 app.get("/urls", (req, res) => {
-  const cookie = req.cookies["username"];
+  const cookie = req.cookies["user_id"];
   if (cookie == " "){
       res.render("urls_index");
   } else {
 const templateVars = {
-    username: cookie,
+    user: cookie,
     urls: urlDatabase
   };
 res.render("urls_index", templateVars);
@@ -81,7 +81,7 @@ app.post("/urls/:id", (req, res) => {
   //GET route to render the New URL
 
   app.get("/urls/new", (req, res) => { 
-    const templateVars = {username: req.cookies["username"]};  
+    const templateVars = {user: req.cookies["user_id"]};  
   res.render("urls_new", templateVars);
 });
   // Show User their Newly Created Link
@@ -156,17 +156,17 @@ app.post("/urls/:id", (req, res) => {
  * This method handles login button. It authenticates all fields and based on that it redirects to link /urls for success else sends a html with a login link to login again.
  */
  app.post("/login", (req, res) => {
-  const username = req.body.username;
-  res.cookie("username", username);
+  const user_id = req.cookies.user_id;
+  console.log("body ", req.body);
+  res.cookie("user_id", user_id);
   res.redirect("/urls");
 });
 
 
 // Logout 
 app.post("/logout", (req, res) => {
-  const username = req.body.username;
-  res.cookie("username", username);
-  res.clearCookie("username");
+  console.log("cookie", req.cookies);
+  res.clearCookie("user_id");
   res.redirect('/urls');
 });
 

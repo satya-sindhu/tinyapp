@@ -14,7 +14,7 @@
         <li class="nav-item">
           <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </ul>
-      <%if (locals.username !== undefined) { %>
+      <%if (user !== undefined) { %>
         <form class="form-inline my-2 my-lg-0" action="/logout" method="POST">
           <label style="margin-right: 1em;">Logged In As: TinyApp <%= user.email %></label>
           <input type="submit" name="logout" class="btn btn-outline-dark" value="Logout">
