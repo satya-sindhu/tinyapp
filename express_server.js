@@ -1,8 +1,8 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser');
-const {userAlreadyExist} = require("./helpers.js");
-const { getUserByEmail, urlsForUser } = require("../../../../Downloads/tinyapp/helper.js");
+const {getUserByEmail} = require("./helpers.js");
+const { urlsForUser } = require("./helpers");
 const app = express();
 const PORT = 8080; // default port 8080
 app.use(cookieParser());
@@ -34,8 +34,8 @@ const urlDatabase = {
 };
 
 const users = { 
-  "userRandomID": {
-    id: "userRandomID", 
+  "aJ48lW": {
+    id: "aJ48lW", 
     email: "user@example.com", 
     password: "purple-monkey-dinosaur"
   },
@@ -82,9 +82,11 @@ app.get("/urls", (req, res) => {
 
 if (user) {
   const templateVars = {
-      urls: urlsForUser(user, urlDatabase),
+      urls: urlsForUser(req.cookies["user_id"], urlDatabase),
       users: user
   };
+  console.log(templateVars.urls);
+  console.log(req.cookies["user_id"]);
   res.render("urls_index", templateVars);
 } else {
   res.status(400).send("Please <a href='/login'> Login</a> or <a href='/register'> Register</a> to create/view tiny urls")
@@ -109,7 +111,7 @@ app.post("/register", (req, res) => {
     .status(400)
     .send(`{error}. Please try again :  <a href="/register"> Register</a>`);
   }
-    if (userAlreadyExist(userEmail, users)) {
+    if (getUserByEmail(userEmail, users)) {
      return res
       .status(400)
       .send(`{useralreadyexist}. Please try again :  <a href="/register"> Register</a>`);
@@ -147,10 +149,12 @@ app.post("/urls/new", (req, res) => {
   // const {longURL , userID} = urlDatabase[shortURL];
   const templateVars = {
     shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL]["longURL"],
+    longURL: JSON.stringify(urlDatabase[shortURL].longURL),
     users: users[req.cookies["user_id"]]
   };
-  
+  console.log(urlDatabase);
+  console.log(req.params.shortURL);
+  console.log(templateVars.longURL);
     res.render("urls_show", templateVars);
 });
 
@@ -185,29 +189,37 @@ app.post("/urls", (req, res) => {
 });
 
 // For Editting the URL
-app.post("/urls/:id", (req, res) => {
-  const {id} = req.params;
-  const {longURL} = req.body;
-  urlDatabase[id] = longURL;
+app.post("/u/:shortURL", (req, res) => {
+  const shortURL = req.params.shortURL;
+  const longURL = req.body.longURL;
+  urlDatabase[shortURL] = {shortURL,longURL,userID: req.cookies["user_id"]};
   res.redirect('/urls');
 });
 
 // To Delete the URL
 app.post("/urls/:shortURL/delete", (req, res) => {
-  const shortURL = req.params.shortURL;
-  delete urlDatabase[shortURL];
-  // const templateVars = {
-  //   shortURL: req.params.shortURL,
-  //   longURL: req.params.longURL,
-  //   username: req.cookies["username"]
-  // }
-      res.redirect('/urls'); 
+  if (users[req.cookies["user_id"]]) {
+      userURL = urlsForUser(users[req.cookies["user_id"]].id, urlDatabase);
+      console.log(urlDatabase);
+      console.log(userURL);
+      if (Object.keys(userURL).includes(req.params.shortURL)) {
+          const shortURL = req.params.shortURL;
+          delete urlDatabase[shortURL];
+          res.redirect("/urls");
+      } else {
+          res.status(401).send("Not Authorized to delete this shortURL");
+      }
+  } else {
+      res
+          .status(401)
+          .send("Not allowed to delete without login <br/><a href='/login'> Login here</a>")
+  }
 });
 
 app.post("/urls/:shortURL", (req, res) => {
   if (users[req.cookies["user_id"]]) {
     if (urlDatabase[req.params.shortURL]) {
-        userURL = urlsForUser(req.cookies["user_id"], urlDatabase);
+        userURL = urlsForUser(users[req.cookies["user_id"]].id, urlDatabase);
         if (Object.keys(userURL).includes(req.params.shortURL)) {
             const shortURL = req.params.shortURL;
             urlDatabase[shortURL] = {
