@@ -2,6 +2,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser');
 const {userAlreadyExist} = require("./helpers.js");
+const { getUserByEmail } = require("../../../../Downloads/tinyapp/helper.js");
 const app = express();
 const PORT = 8080; // default port 8080
 app.use(cookieParser());
@@ -80,7 +81,8 @@ app.post("/urls/:id", (req, res) => {
   //GET route to render the New URL
 
   app.get("/urls/new", (req, res) => { 
-    const templateVars = {user: req.cookies["user_id"]};  
+    const cookie = req.cookies["user_id"];
+    const templateVars = {user:users[cookie]}; 
   res.render("urls_new", templateVars);
 });
   // Show User their Newly Created Link
@@ -109,10 +111,10 @@ app.post("/urls/:id", (req, res) => {
 // To Login Page
 app.get("/login", (req, res) => {
   const templateVars = {
-    user: req.cookies["user_id"]
+    user: null
   }
 console.log(req.body.email);
-  res.render("login",templateVars);
+  res.render("login", templateVars);
 });
 
 
@@ -159,9 +161,22 @@ app.post("/urls/:id", (req, res) => {
  */
  app.post("/login", (req, res) => {
   const user_id = req.cookies.user_id;
+  const email = (req.body.email);
+  console.log(email);
   console.log("body ", req.body);
+  const user = getUserByEmail(email, users);
+  if (!user) {
+      res
+    .status(403)
+    .send(`Invalid User Please try again <a href ='/login'> Login </a>`);
+  } else {
+  const password = req.body.password;
+    if (password !== user["password"]) {
+      res.status(403).send("Invalid password Please try again <a href ='/login'> Login </a>")
+    }
   res.cookie("user_id", user_id);
   res.redirect("/urls");
+  }
 });
 
 
@@ -169,7 +184,7 @@ app.post("/urls/:id", (req, res) => {
 app.post("/logout", (req, res) => {
   console.log("cookie", req.cookies);
   res.clearCookie("user_id");
-  res.redirect('/urls');
+  res.redirect('/login');
 });
 
 
