@@ -1,6 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser');
+const {userAlreadyExist} = require("./helpers.js");
 const app = express();
 const PORT = 8080; // default port 8080
 app.use(cookieParser());
@@ -49,15 +50,13 @@ app.get("/urls.json", (req, res) => {
 // To URL page
 app.get("/urls", (req, res) => {
   const cookie = req.cookies["user_id"];
-  if (cookie == " "){
-      res.render("urls_index");
-  } else {
-const templateVars = {
-    user: cookie,
+  console.log(cookie);
+  console.log(users[cookie]);
+  const templateVars = {
+    user: users[cookie],
     urls: urlDatabase
   };
 res.render("urls_index", templateVars);
-  }
 });
 // Request POST /urls when form is submitted generating random string(shortURL)
   app.post("/urls", (req, res) => {
@@ -91,7 +90,8 @@ app.post("/urls/:id", (req, res) => {
     // const {longURL , userID} = urlDatabase[shortURL];
     const templateVars = {
       shortURL: req.params.shortURL,
-      longURL: urlDatabase[req.params.shortURL]
+      longURL: urlDatabase[req.params.shortURL],
+      user: req.cookies["user_id"]
     };
     
       res.render("urls_show", templateVars);
@@ -104,15 +104,17 @@ app.post("/urls/:id", (req, res) => {
     res.redirect(longURL);
   });
 
-  // To Register Page
-  app.get("/register", (req, res) => {
-    const username = req.cookies["username"];
-       res.render("register", username);
-});
- 
-
-
   
+
+// To Login Page
+app.get("/login", (req, res) => {
+  const templateVars = {
+    user: req.cookies["user_id"]
+  }
+console.log(req.body.email);
+  res.render("login",templateVars);
+});
+
 
   // Request POST /urls when form is submitted generating random string(shortURL)
 //shortURL-longURL key-value pair are saved to the urlDatabase.
@@ -170,16 +172,44 @@ app.post("/logout", (req, res) => {
   res.redirect('/urls');
 });
 
+
+// To Register Page
+app.get("/register", (req, res) => {
+  const templateVars = {
+    user: req.cookies["user_id"]
+  }
+     res.render("register", templateVars);
+});
+
+
 // Create New User or Check if the User Id already Exist
 app.post("/register", (req, res) => {
   const user_id = generateRandomString();
-  const { email, password } = req.body;
-  user = {"id": user_id, "email":email, "password": password};
-  users[user_id] = user;
+  const userEmail = req.body.email;
+  const userPassword = req.body.password;
+  if (userEmail === "" || userPassword === "") {
+    return res
+    .status(400)
+    .send(`{error}. Please try again :  <a href="/register"> Register</a>`);
+  }
+    if (userAlreadyExist(userEmail, users)) {
+     return res
+      .status(400)
+      .send(`{useralreadyexist}. Please try again :  <a href="/register"> Register</a>`);
+    }
+  users[user_id] = {
+    id: user_id,
+    email: userEmail,
+    password: userPassword
+   }
+   console.log(users);
   res.cookie("user_id", user_id);
-  console.log(users);
+  // console.log(user_id);
+  // console.log(users);
     res.redirect("/urls");
   });
+
+
   app.get("/hello", (req, res) => {
     res.send("<html><body>Hello <b>World</b></body></html>\n");
   });
@@ -202,3 +232,4 @@ app.get("/", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
+module.exports = {users};
