@@ -1,4 +1,5 @@
 const express = require("express");
+const bcrypt = require('bcryptjs');
 const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser');
 const {getUserByEmail} = require("./helpers.js");
@@ -116,10 +117,12 @@ app.post("/register", (req, res) => {
       .status(400)
       .send(`{useralreadyexist}. Please try again :  <a href="/register"> Register</a>`);
     }
+
+    const hashPassword = bcrypt.hashSync(userPassword, 10);
   users[user_id] = {
     id: user_id,
     email: userEmail,
-    password: userPassword
+    password: hashPassword
    }
    console.log(users);
   res.cookie("user_id", user_id);
@@ -266,11 +269,12 @@ app.post("/login", (req, res) => {
     .send(`Invalid User Please try again <a href ='/login'> Login </a>`);
   } else {
   const password = req.body.password;
-    if (password !== user["password"]) {
+    if (!bcrypt.compareSync(password, user.password)) {
       res.status(403).send("Invalid password Please try again <a href ='/login'> Login </a>")
-    }
+    } else {
   res.cookie("user_id", user["id"]);
   res.redirect("/urls");
+    }
   }
 });
   
