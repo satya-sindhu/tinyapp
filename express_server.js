@@ -2,7 +2,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser');
 const {userAlreadyExist} = require("./helpers.js");
-const { getUserByEmail } = require("../../../../Downloads/tinyapp/helper.js");
+const { getUserByEmail, urlsForUser } = require("../../../../Downloads/tinyapp/helper.js");
 const app = express();
 const PORT = 8080; // default port 8080
 app.use(cookieParser());
@@ -71,14 +71,24 @@ app.get("/user.json", (req, res) => {
 
   // To URL page
 app.get("/urls", (req, res) => {
-  const cookie = req.cookies["user_id"];
-  //console.log(cookie);
-  //console.log(users[cookie]);
+   const user = users[req.cookies["user_id"]];
+//   //console.log(cookie);
+//   //console.log(users[cookie]);
+//   const templateVars = {
+//     users: users[cookie],
+//     urls: urlDatabase[req.params.shortURL]["longURL"]
+//   };
+// res.render("urls_index", templateVars);
+
+if (user) {
   const templateVars = {
-    users: users[cookie],
-    urls: urlDatabase
+      urls: urlsForUser(user, urlDatabase),
+      users: user
   };
-res.render("urls_index", templateVars);
+  res.render("urls_index", templateVars);
+} else {
+  res.status(400).send("Please <a href='/login'> Login</a> or <a href='/register'> Register</a> to create/view tiny urls")
+}
 });
 
 // To Register Page
@@ -137,8 +147,8 @@ app.post("/urls/new", (req, res) => {
   // const {longURL , userID} = urlDatabase[shortURL];
   const templateVars = {
     shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL],
-    user: req.cookies["user_id"]
+    longURL: urlDatabase[req.params.shortURL]["longURL"],
+    users: users[req.cookies["user_id"]]
   };
   
     res.render("urls_show", templateVars);
@@ -154,11 +164,24 @@ app.get("/u/:shortURL", (req, res) => {
 
 // Request POST /urls when form is submitted generating random string(shortURL)
 app.post("/urls", (req, res) => {
-  const newUrl = generateRandomString();
-   const longURL = req.body.longURL;
-  urlDatabase[newUrl] = longURL;
-  res.redirect("/urls");
- console.log(req.body);
+//   const newUrl = generateRandomString();
+//    const longURL = req.body.longURL;
+//   urlDatabase[newUrl] = longURL;
+//   res.redirect("/urls");
+//  console.log(req.body);
+
+ const user = users[req.cookies["user_id"]];
+ if (user) {
+  const newShortUrl = generateRandomString();
+  const longNewURL = req.body.longURL;
+  urlDatabase[newShortUrl] = {
+      longURL: longNewURL,
+      userID: user["id"]
+  };
+  res.redirect(`/urls/${newShortUrl}`);
+} else {
+  res.status(401).send("Not Authorized to create a new URL without Login <br/><a href ='/login'> Login here</a>");
+}
 });
 
 // For Editting the URL
@@ -183,23 +206,28 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 app.post("/urls/:shortURL", (req, res) => {
   if (users[req.cookies["user_id"]]) {
-      if(urlDatabase[req.params.shortURL]) {
-
-  const shortURL = req.params.shortURL;
-  urlDatabase[shortURL] = {
-      longURL: req.body.longURL,
-      userID: req.cookies["user_id"]
-  };
-  res.redirect("/urls");
-  } else {
-      res
-          .status(405)
-          .send("Access Denied. Please check the short url and try again <br/><a href='/urls'> Main page </a>")
-  }
+    if (urlDatabase[req.params.shortURL]) {
+        userURL = urlsForUser(req.cookies["user_id"], urlDatabase);
+        if (Object.keys(userURL).includes(req.params.shortURL)) {
+            const shortURL = req.params.shortURL;
+            urlDatabase[shortURL] = {
+                longURL: req.body.longURL,
+                userID: req.cookies["user_id"]
+            };
+            res.redirect("/urls");
+        } else {
+            res.status(401).send("Short URL is not valid. Please check and try again");
+        }
+    } else {
+        res  
+            .status(401)
+            .send("Please check the short url <a href='/urls'> Home </a>")
+    }
+} else {
+    res
+        .status(400)
+        .send("Please <br/><a href='/login'> Login </a> or <a href='/register'> Register </a> first")
 }
-  res
-  .status(405)
-  .send("Invalid URL. <br/><a href='/login'> Login </a> or <a href='/register'> Register </a>")
 })
 
 
