@@ -11,3 +11,4 @@ const userAlreadyExist = (email,users) => {
 
 
   module.exports = {userAlreadyExist}; 
+
